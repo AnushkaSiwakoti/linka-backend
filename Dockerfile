@@ -12,7 +12,6 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /usr/src/app
 
 # Install system dependencies required for GDAL
-# This must be done before we switch to the non-privileged user
 USER root
 RUN apt-get update && apt-get install -y \
     libgdal-dev \
@@ -52,10 +51,10 @@ RUN adduser \
 USER appuser
 
 # Copy the source code into the container.
-# COPY --chown=appuser:appuser . .
+COPY --chown=appuser:appuser . .
 
 # Expose the port that the application listens on.
-EXPOSE 9000
+EXPOSE 8000
 
 # Run the application.
-CMD python manage.py runserver 0.0.0.0:9000
+CMD python manage.py runserver 0.0.0.0:8000
