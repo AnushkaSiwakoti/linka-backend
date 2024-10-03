@@ -1,14 +1,16 @@
 from pathlib import Path
+import pymysql
+pymysql.install_as_MySQLdb()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # # Quick-start development settings - unsuitable for production
-# SECRET_KEY = 'your-secret-key'  # Replace this with a real secret key in production
+SECRET_KEY = 'Linka2024!' 
 
 DEBUG = True  # Keep this True during development, set to False in production
 
-ALLOWED_HOSTS = []  # Add your allowed hosts here, e.g., ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost']  # Add your allowed hosts here, e.g., ['localhost', '127.0.0.1']
 
 # Application definition
 INSTALLED_APPS = [
@@ -19,6 +21,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
+<<<<<<< HEAD
+=======
+    'login_service',
+    'rest_framework',
+>>>>>>> fdb3a29f (Integration)
 ]
 
 MIDDLEWARE = [
@@ -30,10 +37,18 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+<<<<<<< HEAD
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
 
+=======
+
+]
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000', 
+]
+>>>>>>> fdb3a29f (Integration)
 ROOT_URLCONF = 'djangoProject.urls'
 
 TEMPLATES = [
@@ -70,6 +85,7 @@ DATABASES = {
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},  # Set a minimum length requirement
 ]
+AUTH_USER_MODEL = 'login_service.BaseUser' 
 
 # Internationalization and time zone
 LANGUAGE_CODE = 'en-us'

@@ -2,13 +2,12 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 
 class CustomUserManager(BaseUserManager):
-    def create_user(self, email, username, password):
+    def create_user(self, email, username, password=None):
         if not email:
-            raise ValueError('An email is required')
+            raise ValueError('An email address is required')
         if not username:
             raise ValueError('A username is required')
 
-        # Ensure email and username are unique by using the built-in constraints
         user = self.model(
             email=self.normalize_email(email),
             username=username,
@@ -17,16 +16,17 @@ class CustomUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def verify_user(self, username, password):
-        try:
-            user = self.get(username=username)
-        except self.model.DoesNotExist:
-            raise ValueError('User does not exist')
-
-        if not user.check_password(password):
-            raise ValueError('Incorrect password')
-
+    def create_superuser(self, email, username, password=None):
+        user = self.create_user(
+            email=email,
+            username=username,
+            password=password
+        )
+        user.is_staff = True
+        user.is_superuser = True
+        user.save(using=self._db)
         return user
+
 
 class BaseUser(AbstractBaseUser):
     email = models.EmailField(max_length=255, unique=True)

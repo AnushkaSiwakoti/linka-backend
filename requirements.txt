@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 appnope==0.1.4
 asgiref==3.8.1
 asttokens==2.4.1
@@ -57,3 +58,9 @@ urllib3==2.2.3
 wcwidth==0.2.13
 webencodings==0.5.1
 yarg==0.1.9
+=======
+asgiref==3.8.1
+Django==5.1.1
+mysqlclient==2.2.4
+sqlparse==0.5.1
+>>>>>>> fdb3a29f (Integration)

@@ -1,0 +1,89 @@
+# Virtual Environments
+venv/
+env/
+demand-back-end-venv
+virtual-env/
+
+# Python Byte-compiled / Optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# Distribution / Packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Logs and Databases
+*.log
+*.sql
+*.sqlite3
+db.sqlite3
+
+# Django Migrations
+**/migrations/*.py
+**/migrations/*.pyc
+
+# Node.js Dependencies and Build Artifacts
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+
+# Test Coverage and Artifacts
+htmlcov/
+.tox/
+.nox/
+.coverage
+.cache
+coverage.xml
+*.cover
+.hypothesis/
+TEST*.xml
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# OS-Specific Files (Mac and Windows)
+.DS_Store
+Thumbs.db
+
+# Editor and IDE Settings
+.vscode/
+.idea/
+
+# Docker Configuration Files
+.dockerignore
+docker-compose.yml
+docker-compose.override.yml
+
+# Application Executables and Binaries
+*.app
+*.exe
+*.war
+
+# Large Media Files
+*.mp4
+*.tiff
+*.avi
+*.flv
+*.mov
+*.wmv
+
+# Configuration Files Containing Sensitive Info
+.env
+config.py
