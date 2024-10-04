@@ -10,7 +10,7 @@ SECRET_KEY = 'Linka2024!'
 
 DEBUG = True  # Keep this True during development, set to False in production
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'http://137.184.141.237']  # Add your allowed hosts here, e.g., ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '137.184.141.237']  # Add your allowed hosts here, e.g., ['localhost', '127.0.0.1']
 
 # Application definition
 INSTALLED_APPS = [
