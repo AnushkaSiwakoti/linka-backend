@@ -69,7 +69,7 @@ DATABASES = {
         'PASSWORD': 'Linka2024!',
         # for local only
         # 'HOST': 'localhost', 
-        'HOST': 'mysql',  
+        'HOST': '127.0.0.1',  
         'PORT': '3306',      
     }
 }
