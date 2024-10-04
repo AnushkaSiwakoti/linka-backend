@@ -127,6 +127,8 @@
 
 # syntax=docker/dockerfile:1
 
+# syntax=docker/dockerfile:1
+
 ARG PYTHON_VERSION=3.12.2
 FROM python:${PYTHON_VERSION}-slim as base
 
@@ -139,7 +141,7 @@ ENV PYTHONUNBUFFERED=1
 # Set working directory
 WORKDIR /usr/src/app
 
-# Install system dependencies required for GDAL and cryptography
+# Install system dependencies required for GDAL, cryptography, and other packages
 USER root
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -149,6 +151,7 @@ RUN apt-get update && apt-get install -y \
     libgdal-dev \
     gcc \
     g++ \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Determine GDAL version and set as environment variable
@@ -165,9 +168,15 @@ ENV GEOS_LIBRARY_PATH=/usr/lib/libgeos_c.so
 
 # Copy requirements file and install Python packages
 COPY requirements.txt .
+
+# Install pip dependencies as root
 RUN pip install --no-cache-dir -r requirements.txt --use-pep517
 
-# Create a non-privileged user to run the application.
+# Download and manually install cryptography if pip install fails
+RUN wget https://files.pythonhosted.org/packages/7b/2e/469af8e5c7c8d0de99eb83c0f5c27394b7715e226bd90b06ddc2db8ddcd1/cryptography-43.0.1-cp312-cp312-manylinux_2_28_x86_64.whl && \
+    pip install cryptography-43.0.1-cp312-cp312-manylinux_2_28_x86_64.whl
+
+# Create a non-privileged user to run the application
 ARG UID=10001
 RUN adduser \
     --disabled-password \
@@ -192,3 +201,4 @@ EXPOSE 8000
 
 # Run the application
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+
