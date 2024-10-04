@@ -10,7 +10,7 @@ SECRET_KEY = 'Linka2024!'
 
 DEBUG = True  # Keep this True during development, set to False in production
 
-ALLOWED_HOSTS = ['localhost']  # Add your allowed hosts here, e.g., ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'http://137.184.141.237']  # Add your allowed hosts here, e.g., ['localhost', '127.0.0.1']
 
 # Application definition
 INSTALLED_APPS = [
@@ -21,11 +21,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
-<<<<<<< HEAD
-=======
     'login_service',
     'rest_framework',
->>>>>>> fdb3a29f (Integration)
 ]
 
 MIDDLEWARE = [
@@ -37,18 +34,12 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-<<<<<<< HEAD
-]
-
-CORS_ORIGIN_ALLOW_ALL = True
-
-=======
 
 ]
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000', 
+    'http://137.184.141.237'
 ]
->>>>>>> fdb3a29f (Integration)
 ROOT_URLCONF = 'djangoProject.urls'
 
 TEMPLATES = [
