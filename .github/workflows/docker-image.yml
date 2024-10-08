@@ -24,7 +24,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
       - name: Build the Docker image
-        run: docker build . --file Dockerfile --tag frontend-image:$(date +%s)
+        run: docker build . --file Dockerfile --tag backend-image:$(date +%s)
 
   deploy:
     runs-on: ubuntu-latest
