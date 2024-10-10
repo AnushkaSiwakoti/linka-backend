@@ -19,7 +19,8 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-
+            cd /home/linka/linka-backend
+            
             # Pull the latest changes from the repository
             git pull
             
