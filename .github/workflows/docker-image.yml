@@ -29,6 +29,10 @@ jobs:
             
             # Stop and remove existing containers
             docker-compose down --remove-orphans
+
+            # Prune unused networks and volumes (optional)
+            docker network prune -f
+            docker volume prune -f
             
             # Start containers with the updated image
             docker-compose up -d --build
