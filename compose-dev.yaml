@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # Frontend: React
+  frontend:
+    build:
+      context: ./linka-frontend  # Path to your React project directory
+      dockerfile: Dockerfile  # Assuming Dockerfile is named 'Dockerfile'
+    container_name: react-dev
+    ports:
+      - "3000:3000"  # Map port 3000 for React dev server
+    volumes:
+      - ./linka-frontend:/app  # Map local directory to container for live-reload
+      - /app/node_modules  # Avoid overwriting node_modules with local one
+    command: npm start
+
+  # Backend: Django
+  backend:
+    build:
+      context: ./linka-backend  # Path to your Django project directory
+      dockerfile: Dockerfile  # Assuming Dockerfile is named 'Dockerfile'
+    container_name: django-dev
+    ports:
+      - "8000:8000"  # Map port 8000 for Django dev server
+    volumes:
+      - ./linka-backend:/app  # Map local directory to container for live-reload
+    command: python manage.py runserver 0.0.0.0:8000
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Database: MySQL
+  db:
+    image: mysql:latest
+    container_name: mysql-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 'Linka2024!'  # Replace with your root password
+      MYSQL_DATABASE: linka_database # Replace with your database name
+      MYSQL_USER: developer  # Replace with your database user
+      MYSQL_PASSWORD: 'Linka2024!'  # Replace with your user password
+    ports:
+      - "3306:3306"  # Exposes MySQL on port 3306
+    volumes:
+      - mysql_data:/var/lib/mysql  # Persists database data
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Database Manager: Adminer
+  adminer:
+    image: adminer
+    container_name: adminer
+    restart: always
+    ports:
+      - "8080:8080"  # Map port 8080 for Adminer
+
+volumes:
+  mysql_data:  # Volume for MySQL database

@@ -10,7 +10,7 @@ SECRET_KEY = 'Linka2024!'
 
 DEBUG = True  # Keep this True during development, set to False in production
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '137.184.141.237']  # Add your allowed hosts here, e.g., ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '137.184.141.237']
 
 # Application definition
 INSTALLED_APPS = [
@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'login_service',
+    'file_processor',
     'rest_framework',
 ]
 
@@ -38,6 +39,7 @@ MIDDLEWARE = [
 ]
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000', 
+    'http://localhost:3001', 
     'http://137.184.141.237'
 ]
 ROOT_URLCONF = 'djangoProject.urls'
@@ -68,8 +70,8 @@ DATABASES = {
         'USER': 'developer',
         'PASSWORD': 'Linka2024!',
         # for local only
-        # 'HOST': 'localhost', 
-        'HOST': 'mysql',  
+        'HOST': 'localhost', 
+        #'HOST': 'mysql',  
         'PORT': '3306',      
     }
 }
