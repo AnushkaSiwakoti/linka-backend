@@ -1,4 +1,5 @@
 from django.apps import AppConfig
+from autoviz.AutoViz_Class import AutoViz_Class
 
 
 class FileProcessorConfig(AppConfig):
