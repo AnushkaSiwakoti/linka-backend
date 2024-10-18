@@ -9,13 +9,13 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from .models import ProcessedFileData
+from django.conf import settings  # Import settings module to access settings attributes
+import os
 
 logger = logging.getLogger(__name__)
 
-
 # Load Google Service Account credentials
-SERVICE_ACCOUNT_FILE = config.GOOGLE_CREDENTIALS_PATH # Change to your credentials file path
-
+SERVICE_ACCOUNT_FILE = config.GOOGLE_CREDENTIALS_PATH  # Change to your credentials file path
 
 credentials = service_account.Credentials.from_service_account_file(
     SERVICE_ACCOUNT_FILE,
@@ -38,8 +38,10 @@ def upload_file(request):
                 logger.info(f"Received file: {file_name}")
 
                 # Save the file temporarily in the server's filesystem
-                file_path = default_storage.save(file_name, uploaded_file)
-                logger.info(f"File saved at: {file_path}")
+                file_path = f"/tmp/{file_name}"  # Save to /tmp directory which usually has appropriate permissions in Docker
+                with open(file_path, 'wb+') as destination:
+                    for chunk in uploaded_file.chunks():
+                        destination.write(chunk)
 
                 # Retry logic for uploading to Google Drive
                 for attempt in range(MAX_RETRIES):
@@ -77,7 +79,7 @@ def upload_file(request):
                 file_data.save()
 
                 # Clean up: remove the file from the server after uploading
-                default_storage.delete(file_path)
+                os.remove(file_path)
                 logger.info(f"Local file deleted: {file_path}")
 
                 # Send a success response back to the frontend

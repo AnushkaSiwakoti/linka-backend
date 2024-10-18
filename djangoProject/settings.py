@@ -12,6 +12,8 @@ DEBUG = True  # Keep this True during development, set to False in production
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '137.184.141.237']
 
+
+FILE_UPLOAD_TEMP_DIR = '/tmp/'
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -70,8 +72,8 @@ DATABASES = {
         'USER': 'developer',
         'PASSWORD': 'Linka2024!',
         # for local only
-        #'HOST': 'localhost', 
-        'HOST': 'mysql',  
+        'HOST': 'localhost', 
+        #'HOST': 'mysql',  
         'PORT': '3306',      
     }
 }
