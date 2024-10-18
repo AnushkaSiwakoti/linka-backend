@@ -1,21 +1,21 @@
 import csv
 import config
 import logging
+import os
+from pathlib import Path
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.files.storage import FileSystemStorage
-from pathlib import Path
-from google.oauth2 import pandas as pd
-from django.service_account
-from googleapiconf import settinglient.discoery import build
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
-from .models import ProcessedFileData
 from django.conf import settings  # Import settings module to access settings attributes
-import os
+from .models import ProcessedFileData
 
 logger = logging.getLogger(__name__)
 
+# Set up file storage
 upload_directory = Path(settings.MEDIA_ROOT) / 'uploads'
 file_storage = FileSystemStorage(location=upload_directory, base_url='/media/uploads/')
 
@@ -42,21 +42,22 @@ def upload_file(request):
                 logger.info(f"Received file: {uploaded_file.name}")
 
                 # Save the file temporarily in the server's filesystem
-                file_path = default_storage.save(uploaded_file.name, uploaded_file)
+                file_path = file_storage.save(uploaded_file.name, uploaded_file)
                 logger.info(f"File saved at: {file_path}")
 
                 # Open the file for processing (assuming it's a CSV)
-                with default_storage.open(file_path) as file:
+                file_full_path = file_storage.path(file_path)
+                with open(file_full_path, 'r', encoding='utf-8') as file:
                     logger.info("Attempting to read the CSV file")
-                    reader = csv.reader(file.read().decode('utf-8').splitlines())
-                    
+                    reader = csv.reader(file)
+
                     # Logging rows for debugging
                     for row in reader:
                         logger.info(f"Processing row: {row}")
                         # You can store rows in the database or process them as needed
 
                 # Clean up: remove the file after processing
-                default_storage.delete(file_path)
+                file_storage.delete(file_path)
                 logger.info(f"File deleted: {file_path}")
 
                 # Send a success response back to the frontend with HTTP status 200
