@@ -10,7 +10,3 @@ urlpatterns = [
     path('', include('login_service.urls')),            # Root URL routes to login_service
     path('file/', include('file_processor.urls')),      # File processing app URL
 ]
-
-# Serve media files during development
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
