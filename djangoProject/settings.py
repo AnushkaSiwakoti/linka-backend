@@ -1,6 +1,9 @@
 from pathlib import Path
 import pymysql
+from decouple import config, Csv
+import os
 pymysql.install_as_MySQLdb()
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -76,7 +79,7 @@ DATABASES = {
         'USER': 'developer',
         'PASSWORD': 'Linka2024!',
         # for local only
-        'HOST': 'localhost', 
+        'HOST': config('DATABASE_NAME', default='mysql'),
         #'HOST': 'mysql',  
         'PORT': '3306',      
     }
