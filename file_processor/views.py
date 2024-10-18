@@ -42,12 +42,14 @@ def upload_file(request):
                 logger.info(f"Received file: {uploaded_file.name}")
 
                 # Save the file temporarily in the server's filesystem
-                file_path = file_storage.save(uploaded_file.name, uploaded_file)
+                file_path = os.path.join('/tmp', uploaded_file.name)  # Save to /tmp directory which usually has appropriate permissions in Docker
+                with open(file_path, 'wb+') as destination:
+                    for chunk in uploaded_file.chunks():
+                        destination.write(chunk)
                 logger.info(f"File saved at: {file_path}")
 
                 # Open the file for processing (assuming it's a CSV)
-                file_full_path = file_storage.path(file_path)
-                with open(file_full_path, 'r', encoding='utf-8') as file:
+                with open(file_path, 'r', encoding='utf-8') as file:
                     logger.info("Attempting to read the CSV file")
                     reader = csv.reader(file)
 
@@ -57,7 +59,7 @@ def upload_file(request):
                         # You can store rows in the database or process them as needed
 
                 # Clean up: remove the file after processing
-                file_storage.delete(file_path)
+                os.remove(file_path)
                 logger.info(f"File deleted: {file_path}")
 
                 # Send a success response back to the frontend with HTTP status 200
