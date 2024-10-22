@@ -42,11 +42,8 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
 
 ]
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000', 
-    'http://localhost:3001', 
-    'http://137.184.141.237'
-]
+CORS_ALLOW_ALL_ORIGINS = True
+
 ROOT_URLCONF = 'djangoProject.urls'
 
 TEMPLATES = [
