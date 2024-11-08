@@ -3,7 +3,7 @@ import pymysql
 from decouple import config, Csv
 import os
 pymysql.install_as_MySQLdb()
-
+from corsheaders.defaults import default_headers
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -29,9 +29,11 @@ INSTALLED_APPS = [
     'login_service',
     'file_processor',
     'rest_framework',
+    'dashboards',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -39,10 +41,17 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-
+    
 ]
-CORS_ALLOW_ALL_ORIGINS = True
+
+# CORS_ALLOW_ALL_ORIGINS = True  # For testing (use cautiously)
+
+CORS_ALLOW_ALL_ORIGINS = True # Set to False since you are using specific origins
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'cache-control',  # Include this to allow cache-control header
+]
 
 ROOT_URLCONF = 'djangoProject.urls'
 
@@ -95,3 +104,20 @@ STATIC_URL = 'static/'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGIN_URL = '/verify-account/' 
+# Session configuration 
+SESSION_ENGINE = 'django.contrib.sessions.backends.db' 
+SESSION_COOKIE_NAME = 'sessionid' 
+SESSION_COOKIE_SECURE = False  # Set to True in production 
+SESSION_COOKIE_HTTPONLY = True 
+SESSION_COOKIE_SAMESITE = 'Lax' 
+SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
+
+CSRF_COOKIE_NAME = 'csrftoken'
+CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
+CSRF_COOKIE_SAMESITE = 'Lax'  # or 'Strict' depending on your needs
+CSRF_COOKIE_HTTPONLY = False  # Must be False so JS can read it
+CSRF_USE_SESSIONS = False
+CSRF_COOKIE_SECURE = False  # if using HTTPS
+
