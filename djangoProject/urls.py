@@ -9,6 +9,4 @@ urlpatterns = [
     path('admin/', admin.site.urls),                    # Admin interface
     path('', include('login_service.urls')),            # Root URL routes to login_service
     path('file/', include('file_processor.urls')),      # File processing app URL
-    path('dashboards/', include('dashboards.urls')),
-    
 ]

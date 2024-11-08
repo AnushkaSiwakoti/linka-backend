@@ -28,12 +28,7 @@ def upload_file(request):
         if request.FILES.get('file'):
             try:
                 uploaded_file = request.FILES['file']
-                username = request.POST.get('username')
-
-                if not username:
-                    return JsonResponse({'status': 'error', 'message': 'Username is required'}, status=400)
-
-                logger.info(f"Received file: {uploaded_file.name} from user: {username}")
+                logger.info(f"Received file: {uploaded_file.name}")
 
                 # Save the file temporarily
                 file_path = os.path.join('/tmp', uploaded_file.name)
@@ -50,40 +45,18 @@ def upload_file(request):
 
                 logger.info(f"CSV content: {csv_data}")
 
-                # Upload the file to Google Drive
-                file_metadata = {'name': uploaded_file.name}
-                media = MediaFileUpload(file_path, mimetype='text/csv')
-                drive_file = drive_service.files().create(
-                    body=file_metadata,
-                    media_body=media,
-                    fields='id, webViewLink'
-                ).execute()
-
-                file_id = drive_file.get('id')
-                file_url = drive_file.get('webViewLink')
-
                 # Remove the file from the temporary location
                 os.remove(file_path)
                 logger.info(f"Temporary file deleted: {file_path}")
 
-                # Save metadata to the database
-                ProcessedFileData.objects.create(
-                    file_id=file_id,
-                    file_name=uploaded_file.name,
-                    file_url=file_url,
-                    processed=False,
-                    username=username
-                )
-
                 # Return the CSV content to the frontend
-                return JsonResponse({'status': 'success', 'csv_content': csv_data, 'file_url': file_url}, status=200)
+                return JsonResponse({'status': 'success', 'csv_content': csv_data}, status=200)
 
             except Exception as e:
                 logger.error(f"Error during file upload or processing: {str(e)}")
                 return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
         else:
             return JsonResponse({'status': 'error', 'message': 'No file provided'}, status=400)
-
 @csrf_exempt
 def fetch_csv(request):
     if request.method == 'POST':
