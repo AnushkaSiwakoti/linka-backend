@@ -106,13 +106,21 @@ def get_dashboard(request, dashboard_id):
 @api_view(['DELETE'])
 @authentication_classes([CsrfExemptSessionAuthentication])
 @permission_classes([IsAuthenticated])
-def delete_dashboard(request, dashboard_id):
+def delete_dashboard(request):
     try:
+        # Get dashboard_id from request body
+        data = json.loads(request.body)
+        dashboard_id = data.get('dashboard_id')
+        
+        if not dashboard_id:
+            return JsonResponse({'error': 'dashboard_id is required'}, status=400)
+            
         dashboard = Dashboard.objects.get(id=dashboard_id, user=request.user)
         dashboard.delete()
         return JsonResponse({'message': 'Dashboard deleted successfully'})
     except Dashboard.DoesNotExist:
         return JsonResponse({'error': 'Dashboard not found'}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON in request body'}, status=400)
     except Exception as e:
         return JsonResponse({'error': 'An error occurred while deleting the dashboard'}, status=500)
- 
