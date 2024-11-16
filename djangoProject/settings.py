@@ -48,6 +48,7 @@ MIDDLEWARE = [
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Use the same origin for the frontend
+    "http://137.184.141.237"
 ]
 
 CORS_ALLOW_CREDENTIALS = True
