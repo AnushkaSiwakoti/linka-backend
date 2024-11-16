@@ -113,7 +113,7 @@ LOGIN_URL = '/verify-account/'
 SESSION_ENGINE = 'django.contrib.sessions.backends.db' 
 SESSION_COOKIE_NAME = 'sessionid' 
 SESSION_COOKIE_SECURE = False # was true
-SESSION_COOKIE_HTTPONLY = True 
+SESSION_COOKIE_HTTPONLY = False 
 SESSION_COOKIE_SAMESITE = 'None' 
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
 
