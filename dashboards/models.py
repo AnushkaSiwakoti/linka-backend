@@ -8,6 +8,7 @@ class Dashboard(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     state = models.TextField()  # Store JSON-encoded state here
+    deployed_url = models.URLField(null=True, blank=True)  # Add this line
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -29,6 +30,5 @@ class Dashboard(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.user.username}"
-
 
 
