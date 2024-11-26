@@ -524,9 +524,11 @@ def deploy_dashboard(request):
         deployment_directory = os.path.join(os.getcwd(), 'deployments')
         if not os.path.exists(deployment_directory):
             os.makedirs(deployment_directory)
+        print(f"Deployment directory: {deployment_directory}")  # Debug statement
 
         file_name = f"dashboard_{request.user.id}_{dashboard_id}.html"
         file_path = os.path.join(deployment_directory, file_name)
+        print(f"File path for deployment: {file_path}")  # Debug statement
 
         with open(file_path, 'w') as file:
             file.write(html_content)
