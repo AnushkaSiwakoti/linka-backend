@@ -1,5 +1,6 @@
 # just to recommit
 import os
+import traceback
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -524,15 +525,20 @@ def deploy_dashboard(request):
         deployment_directory = os.path.join(os.getcwd(), 'deployments')
         if not os.path.exists(deployment_directory):
             os.makedirs(deployment_directory)
-        print(f"Deployment directory: {deployment_directory}")  # Debug statement
+            print(f"Deployment directory: {deployment_directory}")  # Debug statement
 
         file_name = f"dashboard_{request.user.id}_{dashboard_id}.html"
         file_path = os.path.join(deployment_directory, file_name)
         print(f"File path for deployment: {file_path}")  # Debug statement
 
-        with open(file_path, 'w') as file:
-            file.write(html_content)
-
+        try:
+            with open(file_path, 'w') as file:
+                file.write(html_content)
+            print(f"[DEBUG] Successfully created HTML file at: {file_path}")
+        except Exception as file_creation_error:
+            print(f"[ERROR] Failed to create HTML file at {file_path}: {file_creation_error}")
+            traceback.print_exc()
+            
         deployed_url = f"{request.build_absolute_uri('/')[:-1]}/deployments/{file_name}"
         
         dashboard.deployed_url = deployed_url
@@ -545,4 +551,5 @@ def deploy_dashboard(request):
 
     except Exception as e:
         print(f"Error deploying dashboard: {str(e)}")
+        traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=500)
