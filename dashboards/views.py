@@ -522,10 +522,14 @@ def deploy_dashboard(request):
         </html>
         """
 
-        deployment_directory = os.path.join(os.getcwd(), 'deployments')
-        if not os.path.exists(deployment_directory):
-            os.makedirs(deployment_directory)
-            print(f"Deployment directory: {deployment_directory}")  # Debug statement
+        # local: deployment_directory = os.path.join(os.getcwd(), 'deployments')
+        
+        # if not os.path.exists(deployment_directory):
+        #     os.makedirs(deployment_directory)
+        #     print(f"Deployment directory: {deployment_directory}")  # Debug statement
+
+        
+        deployment_directory = '/app/deployments'
 
         file_name = f"dashboard_{request.user.id}_{dashboard_id}.html"
         file_path = os.path.join(deployment_directory, file_name)
