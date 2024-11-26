@@ -126,9 +126,6 @@ def delete_dashboard(request):
         return JsonResponse({'error': 'Invalid JSON in request body'}, status=400)
     except Exception as e:
         return JsonResponse({'error': 'An error occurred while deleting the dashboard'}, status=500)
-    
-
-
 
 @csrf_exempt
 @api_view(['POST'])
@@ -145,114 +142,314 @@ def deploy_dashboard(request):
         name = dashboard.name
         state = json.loads(dashboard.state)
 
-        # Generate the HTML content for the dashboard
+        def optimize_positions(state):
+            positions = state.get('componentPositions', {})
+            components = []
+            
+            # Convert positions to list and add component types
+            for comp_id, pos in positions.items():
+                is_table = comp_id == 'table'
+                components.append({
+                    'id': comp_id,
+                    'x': pos['x'],
+                    'y': pos['y'],
+                    'width': pos.get('width', 700),  # Use saved width or default
+                    'height': pos.get('height', 800 if is_table else 400),  # Use saved height or default
+                    'is_table': is_table
+                })
+            
+            # Sort components by Y position, then X position
+            components.sort(key=lambda c: (c['y'], c['x']))
+            
+            # Group components into rows (components within 50px Y distance)
+            rows = []
+            current_row = []
+            last_y = None
+            
+            for comp in components:
+                if last_y is None or abs(comp['y'] - last_y) <= 50:
+                    current_row.append(comp)
+                else:
+                    if current_row:
+                        rows.append(sorted(current_row, key=lambda c: c['x']))
+                    current_row = [comp]
+                last_y = comp['y']
+            
+            if current_row:
+                rows.append(sorted(current_row, key=lambda c: c['x']))
+            
+            # Optimize positions while maintaining relative layout
+            optimized_positions = {}
+            current_y = 20
+            
+            for row in rows:
+                max_height = max(c['height'] for c in row)
+                current_x = 20
+                
+                for comp in row:
+                    # Position the component
+                    optimized_positions[comp['id']] = {
+                        'x': current_x,
+                        'y': current_y,
+                        'width': comp['width'],
+                        'height': comp['height']
+                    }
+                    
+                    # Update x position for next component with gap
+                    current_x = current_x + comp['width'] + 20
+                
+                # Move to next row with gap
+                current_y = current_y + max_height + 20
+            
+            return optimized_positions
+
+        # Apply position optimization
+        optimized_positions = optimize_positions(state)
+        state['componentPositions'] = optimized_positions
+
+        # Calculate container dimensions
+        max_width = max(pos['x'] + pos['width'] for pos in optimized_positions.values()) + 40
+        max_height = max(pos['y'] + pos['height'] for pos in optimized_positions.values()) + 40
+
         html_content = f"""
         <!DOCTYPE html>
         <html lang="en">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>{name} - Dashboard</title>
-            <link rel="stylesheet" href="/deployments/deploy.css">
+            <title>{name}</title>
             <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <style>
+                * {{
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                }}
 
+                body {{
+                    background-color: #000;
+                    color: #fff;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    min-height: 100vh;
+                    line-height: 1.5;
+                    overflow-x: hidden;
+                }}
+
+                .deploy-container {{
+                    min-height: 100vh;
+                    padding: 20px;
+                    position: relative;
+                }}
+
+                .background-image {{
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100vw;
+                    height: 100vh;
+                    object-fit: cover;
+                    opacity: 0.45;
+                    filter: brightness(0.9);
+                    z-index: -2;
+                }}
+
+                .deploy-container::before {{
+                    content: '';
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100vw;
+                    height: 100vh;
+                    background: rgba(0, 0, 0, 0.6);
+                    z-index: -1;
+                }}
+
+                .components-container {{
+                    width: {max_width}px;
+                    min-height: {max_height}px;
+                    margin: 0 auto;
+                    padding: 20px;
+                    position: relative;
+                }}
+
+                .component-wrapper {{
+                    position: absolute;
+                    background: rgba(17, 24, 39, 0.95);
+                    border-radius: 12px;
+                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    overflow: hidden;
+                }}
+
+                .component-header {{
+                    padding: 16px;
+                    background: rgba(0, 0, 0, 0.2);
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                }}
+
+                .component-header h3 {{
+                    margin: 0;
+                    font-size: 1rem;
+                    font-weight: 500;
+                    color: rgba(255, 255, 255, 0.9);
+                }}
+
+                .chart-wrapper {{
+                    height: calc(100% - 53px);
+                    padding: 16px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }}
+
+                .chart-wrapper canvas {{
+                    width: 100% !important;
+                    height: 100% !important;
+                }}
+
+                .table-wrapper {{
+                    height: calc(100% - 53px);
+                    display: flex;
+                    flex-direction: column;
+                }}
+
+                .table-content {{
+                    flex: 1;
+                    overflow: auto;
+                    padding: 16px;
+                }}
+
+                .data-table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                }}
+
+                .data-table th,
+                .data-table td {{
+                    padding: 12px;
+                    text-align: left;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                }}
+
+                .data-table th {{
+                    background: rgba(0, 0, 0, 0.2);
+                    position: sticky;
+                    top: 0;
+                    z-index: 1;
+                    font-weight: 500;
+                }}
+
+                .pagination {{
+                    padding: 16px;
+                    display: flex;
+                    justify-content: center;
+                    gap: 16px;
+                    align-items: center;
+                    background: rgba(0, 0, 0, 0.2);
+                }}
+
+                .pagination button {{
+                    padding: 8px 16px;
+                    background: rgba(255, 255, 255, 0.1);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    border-radius: 4px;
+                    color: white;
+                    cursor: pointer;
+                }}
+
+                .pagination button:disabled {{
+                    opacity: 0.5;
+                    cursor: not-allowed;
+                }}
+
+                @media (max-width: {max_width + 40}px) {{
+                    .deploy-container {{
+                        overflow-x: auto;
+                        padding: 20px 0;
+                    }}
+                    
+                    .components-container {{
+                        margin: 0 20px;
+                    }}
+                }}
+            </style>
         </head>
         <body>
-            <div class="container mt-4">
-                <h1>{name}</h1>
-                <div id="chartsContainer" style="position: relative;"></div>
-                <div id="tableContainer"></div>
+            <div class="deploy-container">
+                <div id="componentsContainer" class="components-container"></div>
             </div>
-            
             <script>
                 const dashboardState = {json.dumps(state)};
-                
-                // Render the charts
-                function renderCharts() {{
-                    const container = document.getElementById('chartsContainer');
-                    container.innerHTML = ''; // Clear existing charts
+                const ROWS_PER_PAGE = 10;
 
-                    dashboardState.charts.forEach((chart) => {{
-                        const chartDiv = document.createElement('div');
-                        chartDiv.classList.add('chart-item');
-                        chartDiv.style.left = `${{dashboardState.componentPositions[chart.id].x || 20}}px`;
-                        chartDiv.style.top = `${{dashboardState.componentPositions[chart.id].y || 20}}px`;
-                        chartDiv.style.width = `${{dashboardState.componentPositions[chart.id].width || 700}}px`;
-                        chartDiv.style.height = `${{dashboardState.componentPositions[chart.id].height || 400}}px`;
-                        
-                        const canvas = document.createElement('canvas');
-                        chartDiv.appendChild(canvas);
-                        container.appendChild(chartDiv);
-
-                        const chartConfig = {{
-                            type: chart.type,
-                            data: chart.data,
-                            options: Object.assign({{}}, chart.options, {{
-                                responsive: true,
-                                maintainAspectRatio: false
-                            }})
-                        }};
-
-                        new Chart(canvas, chartConfig);
+                function createChart(chartData, type) {{
+                    const ctx = document.createElement('canvas');
+                    ctx.style.maxHeight = '100%';
+                    
+                    new Chart(ctx, {{
+                        type: type,
+                        data: chartData.data,
+                        options: {{
+                            ...chartData.options,
+                            maintainAspectRatio: false,
+                            responsive: true,
+                            plugins: {{
+                                legend: {{
+                                    position: 'top',
+                                    labels: {{ 
+                                        color: '#fff',
+                                        padding: 20,
+                                        font: {{
+                                            size: 11
+                                        }}
+                                    }}
+                                }}
+                            }},
+                            scales: {{
+                                x: {{
+                                    grid: {{ color: 'rgba(255,255,255,0.1)' }},
+                                    ticks: {{ 
+                                        color: '#fff',
+                                        font: {{ size: 11 }}
+                                    }}
+                                }},
+                                y: {{
+                                    grid: {{ color: 'rgba(255,255,255,0.1)' }},
+                                    ticks: {{ 
+                                        color: '#fff',
+                                        font: {{ size: 11 }}
+                                    }}
+                                }}
+                            }}
+                        }}
                     }});
+                    return ctx;
                 }}
-                
-                // Render the table with pagination, sorting, and filters
-                function renderTable() {{
-                    if (!dashboardState.showTable) return;
 
-                    const container = document.getElementById('tableContainer');
-                    container.innerHTML = ''; // Clear existing table
-                    const tableWrapper = document.createElement('div');
-                    tableWrapper.className = 'table-section';
+                function createTable(data, columns) {{
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'table-wrapper';
+
+                    const content = document.createElement('div');
+                    content.className = 'table-content';
 
                     const table = document.createElement('table');
-                    table.className = 'table table-striped data-table';
+                    table.className = 'data-table';
 
-                    // Create table header
                     const thead = document.createElement('thead');
                     const headerRow = document.createElement('tr');
-                    dashboardState.columns.forEach(column => {{
+                    columns.forEach(column => {{
                         const th = document.createElement('th');
                         th.textContent = column;
-                        th.style.cursor = 'pointer';
-
-                        // Add sorting functionality
-                        th.addEventListener('click', () => {{
-                            // Sort table based on column clicked
-                            if (dashboardState.tableFilters.sortColumn === column) {{
-                                dashboardState.tableFilters.sortDirection = dashboardState.tableFilters.sortDirection === 'asc' ? 'desc' : 'asc';
-                            }} else {{
-                                dashboardState.tableFilters.sortColumn = column;
-                                dashboardState.tableFilters.sortDirection = 'asc';
-                            }}
-                            renderTable(); // Re-render table after sorting
-                        }});
-
-                        // Add sort direction indicator
-                        if (dashboardState.tableFilters.sortColumn === column) {{
-                            const sortIndicator = document.createElement('span');
-                            sortIndicator.textContent = dashboardState.tableFilters.sortDirection === 'asc' ? ' ↑' : ' ↓';
-                            th.appendChild(sortIndicator);
-                        }}
-                        
                         headerRow.appendChild(th);
                     }});
                     thead.appendChild(headerRow);
                     table.appendChild(thead);
 
-                    // Apply filters and sort table data
-                    const filteredData = applyTableFilters(dashboardState.data);
-
-                    // Create table body with pagination
-                    const startIndex = dashboardState.tableFilters.pageIndex * dashboardState.tableFilters.rowsPerPage;
-                    const endIndex = startIndex + dashboardState.tableFilters.rowsPerPage;
-                    const pageData = filteredData.slice(startIndex, endIndex);
-
                     const tbody = document.createElement('tbody');
-                    pageData.forEach(row => {{
+                    data.slice(0, ROWS_PER_PAGE).forEach(row => {{
                         const tr = document.createElement('tr');
-                        dashboardState.columns.forEach(column => {{
+                        columns.forEach(column => {{
                             const td = document.createElement('td');
                             td.textContent = row[column];
                             tr.appendChild(td);
@@ -261,93 +458,81 @@ def deploy_dashboard(request):
                     }});
                     table.appendChild(tbody);
 
-                    tableWrapper.appendChild(table);
+                    content.appendChild(table);
+                    wrapper.appendChild(content);
 
-                    // Pagination controls
-                    const paginationControls = document.createElement('div');
-                    paginationControls.className = 'pagination';
+                    const pagination = document.createElement('div');
+                    pagination.className = 'pagination';
+                    pagination.innerHTML = `
+                        <button disabled>Previous</button>
+                        <span>Page 1 of ${{Math.ceil(data.length / ROWS_PER_PAGE)}}</span>
+                        <button>Next</button>
+                    `;
+                    wrapper.appendChild(pagination);
 
-                    const prevButton = document.createElement('button');
-                    prevButton.textContent = 'Previous';
-                    prevButton.disabled = dashboardState.tableFilters.pageIndex === 0;
-                    prevButton.onclick = () => {{
-                        dashboardState.tableFilters.pageIndex = Math.max(0, dashboardState.tableFilters.pageIndex - 1);
-                        renderTable();
-                    }};
-                    paginationControls.appendChild(prevButton);
-
-                    const pageInfo = document.createElement('span');
-                    pageInfo.textContent = `Page ${{dashboardState.tableFilters.pageIndex + 1}} of ${{Math.ceil(filteredData.length / dashboardState.tableFilters.rowsPerPage)}}`;
-                    paginationControls.appendChild(pageInfo);
-
-                    const nextButton = document.createElement('button');
-                    nextButton.textContent = 'Next';
-                    nextButton.disabled = endIndex >= filteredData.length;
-                    nextButton.onclick = () => {{
-                        if (dashboardState.tableFilters.pageIndex + 1 < Math.ceil(filteredData.length / dashboardState.tableFilters.rowsPerPage)) {{
-                            dashboardState.tableFilters.pageIndex += 1;
-                            renderTable();
-                        }}
-                    }};
-                    paginationControls.appendChild(nextButton);
-
-                    tableWrapper.appendChild(paginationControls);
-                    container.appendChild(tableWrapper);
+                    return wrapper;
                 }}
 
-                // Helper function to apply table filters and sorting
-                function applyTableFilters(data) {{
-                    let filteredData = data;
+                function renderComponent(componentId) {{
+                    const chart = dashboardState.charts?.find(c => c.id === componentId);
+                    const isTable = componentId === 'table';
+                    const position = dashboardState.componentPositions[componentId];
 
-                    // Apply sorting
-                    if (dashboardState.tableFilters.sortColumn) {{
-                        const column = dashboardState.tableFilters.sortColumn;
-                        const direction = dashboardState.tableFilters.sortDirection;
+                    if (!position) return null;
 
-                        filteredData.sort((a, b) => {{
-                            let valueA = a[column];
-                            let valueB = b[column];
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'component-wrapper';
+                    
+                    // Apply exact position and size
+                    wrapper.style.width = `${{position.width}}px`;
+                    wrapper.style.height = `${{position.height}}px`;
+                    wrapper.style.transform = `translate(${{position.x}}px, ${{position.y}}px)`;
 
-                            if (!isNaN(valueA) && !isNaN(valueB)) {{
-                                valueA = parseFloat(valueA);
-                                valueB = parseFloat(valueB);
-                            }} else {{
-                                valueA = String(valueA).toLowerCase();
-                                valueB = String(valueB).toLowerCase();
-                            }}
+                    const header = document.createElement('div');
+                    header.className = 'component-header';
+                    header.innerHTML = `<h3>${{isTable ? 'Data Table' : `${{chart?.type === 'pie' ? 'Category' : chart?.chartType}} Distribution`}}</h3>`;
+                    wrapper.appendChild(header);
 
-                            return direction === 'asc' ? (valueA > valueB ? 1 : -1) : (valueA < valueB ? 1 : -1);
-                        }});
+                    if (isTable) {{
+                        wrapper.appendChild(createTable(dashboardState.data, dashboardState.columns));
+                    }} else if (chart) {{
+                        const chartWrapper = document.createElement('div');
+                        chartWrapper.className = 'chart-wrapper';
+                        chartWrapper.appendChild(createChart(chart, chart.type));
+                        wrapper.appendChild(chartWrapper);
                     }}
 
-                    return filteredData;
+                    return wrapper;
                 }}
 
-                // Initialize the dashboard
                 document.addEventListener('DOMContentLoaded', () => {{
-                    renderCharts();
-                    renderTable();
+                    const container = document.getElementById('componentsContainer');
+                    
+                    // Render components in saved order
+                    dashboardState.componentOrder.forEach(componentId => {{
+                        const component = renderComponent(componentId);
+                        if (component) {{
+                            container.appendChild(component);
+                        }}
+                    }});
                 }});
             </script>
         </body>
         </html>
         """
 
-        # Save the HTML to a deployment directory
         deployment_directory = os.path.join(os.getcwd(), 'deployments')
         if not os.path.exists(deployment_directory):
             os.makedirs(deployment_directory)
 
-        file_name = f"dashboard_{request.user.id}_{name.replace(' ', '_')}.html"
+        file_name = f"dashboard_{request.user.id}_{dashboard_id}.html"
         file_path = os.path.join(deployment_directory, file_name)
 
         with open(file_path, 'w') as file:
             file.write(html_content)
 
-        # Construct the deployed URL
         deployed_url = f"{request.build_absolute_uri('/')[:-1]}/deployments/{file_name}"
-
-        # Update the dashboard with deployment information if needed
+        
         dashboard.deployed_url = deployed_url
         dashboard.save()
 
@@ -355,11 +540,7 @@ def deploy_dashboard(request):
             'message': 'Dashboard deployed successfully',
             'deployed_url': deployed_url
         })
-    except Dashboard.DoesNotExist:
-        return JsonResponse({'error': 'Dashboard not found'}, status=404)
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
-    except ValidationError as e:
-        return JsonResponse({'error': str(e)}, status=400)
+
     except Exception as e:
+        print(f"Error deploying dashboard: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
