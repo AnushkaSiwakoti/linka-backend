@@ -501,12 +501,14 @@ def deploy_dashboard(request):
         print(f"File path for deployment: {file_path}")  # Debug statement
 
         try:
-            with open(file_path, 'w') as file:
-                file.write(html_content)
-            print(f"[DEBUG] Successfully created HTML file at: {file_path}")
-        except Exception as file_creation_error:
-            print(f"[ERROR] Failed to create HTML file at {file_path}: {file_creation_error}")
-            traceback.print_exc()
+    with open(file_path, 'w') as file:
+        file.write(html_content)
+        file.flush()  # Ensure content is flushed to disk
+        os.fsync(file.fileno())  # Force the write to persist
+    print(f"[DEBUG] Successfully created HTML file at: {file_path}")
+    except Exception as file_creation_error:
+        print(f"[ERROR] Failed to create HTML file at {file_path}: {file_creation_error}")
+        traceback.print_exc()
             
         deployed_url = f"{request.build_absolute_uri('/')[:-1]}/deployments/{file_name}"
         
