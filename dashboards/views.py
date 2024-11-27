@@ -510,7 +510,10 @@ def deploy_dashboard(request):
             print(f"[ERROR] Failed to create HTML file at {file_path}: {file_creation_error}")
             traceback.print_exc()
             
-        deployed_url = f"{request.build_absolute_uri('/')[:-1]}/deployments/{file_name}"
+        # local: deployed_url = f"{request.build_absolute_uri('/')[:-1]}/deployments/{file_name}"
+       
+        deployed_url = f"{request.build_absolute_uri('/')[:-1]}/api/deployments/{file_name}"
+
         
         dashboard.deployed_url = deployed_url
         dashboard.save()
