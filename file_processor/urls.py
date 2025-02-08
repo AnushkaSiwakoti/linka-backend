@@ -1,7 +1,8 @@
+# file_processor/urls.py
 from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('upload/', views.upload_file, name='upload_file'),  # URL for uploading files
-    path('fetch_csv/', views.fetch_csv, name='fetch_csv'),  # URL for fetching and parsing CSV
+    path('upload/', views.upload_file, name='upload_file'),
+    path('fetch_file/', views.fetch_file, name='fetch_file'),
 ]

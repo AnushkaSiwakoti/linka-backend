@@ -1,92 +1,59 @@
-# just to recommit
 import os
 import traceback
-from django.core.exceptions import ValidationError
+import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import IsAuthenticated
 from .models import Dashboard
-import json
-from django.core.exceptions import ValidationError
 
-class CsrfExemptSessionAuthentication(SessionAuthentication):
-    def enforce_csrf(self, request):
-        # Disable CSRF token checking
-        return
-
-# Custom user authentication function
-def verify_user(request):
-    if request.user.is_authenticated:
-        return True, request.user
-    else:
-        return False, JsonResponse({
-            'error': 'Authentication required',
-            'redirect_url': '/verify-account/'
-        }, status=401)
-
-# @csrf_exempt
+# -----------------------
+# Save Dashboard (POST)
+# -----------------------
+@csrf_exempt
 @api_view(['POST'])
-@authentication_classes([CsrfExemptSessionAuthentication])
+@authentication_classes([SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def save_dashboard(request):
-    print("Request Method:", request.method)
-    print("Request URL:", request.build_absolute_uri())
-    print("Request Headers:", request.headers)
-    print("Request Body:", request.body.decode('utf-8'))
-
     try:
-        data = json.loads(request.body)
+        # Using DRF's request.data (which automatically parses JSON)
+        data = request.data  
         name = data.get('name')
-        if not name:
-            return JsonResponse({'error': 'Dashboard name is required'}, status=400)
-
         state = data.get('state')
-        if not state:
-            return JsonResponse({'error': 'Dashboard state is required'}, status=400)
-
+        if not name or not state:
+            return JsonResponse({'error': 'Dashboard name and state are required'}, status=400)
         dashboard, created = Dashboard.objects.update_or_create(
             user=request.user,
             name=name,
             defaults={'state': json.dumps(state)}
         )
-
         return JsonResponse({
             'message': 'Dashboard saved successfully',
             'dashboard_id': dashboard.id,
             'created': created
         })
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
-    except ValidationError as e:
-        return JsonResponse({'error': str(e)}, status=400)
     except Exception as e:
+        traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=500)
 
-@csrf_exempt
+# -----------------------
+# List Dashboards (GET)
+# -----------------------
 @api_view(['GET'])
-@authentication_classes([CsrfExemptSessionAuthentication])
+@authentication_classes([SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def list_dashboards(request):
-    try:
-        dashboards = Dashboard.objects.filter(user=request.user).values(
-            'id', 
-            'name', 
-            'created_at', 
-            'updated_at'
-        ).order_by('-updated_at')
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Not authenticated'}, status=401)
+    dashboards = Dashboard.objects.filter(user=request.user)
+    return JsonResponse({'dashboards': list(dashboards.values())})
 
-        return JsonResponse({
-            'dashboards': list(dashboards),
-            'count': len(dashboards)
-        }, safe=False)
-    except Exception as e:
-        return JsonResponse({'error': 'An error occurred while fetching dashboards'}, status=500)
-
+# Get a Single Dashboard (GET)
+# -----------------------
 @csrf_exempt
 @api_view(['GET'])
-@authentication_classes([CsrfExemptSessionAuthentication])
+@authentication_classes([SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def get_dashboard(request, dashboard_id):
     try:
@@ -100,37 +67,40 @@ def get_dashboard(request, dashboard_id):
         })
     except Dashboard.DoesNotExist:
         return JsonResponse({'error': 'Dashboard not found'}, status=404)
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid dashboard state'}, status=500)
     except Exception as e:
-        return JsonResponse({'error': 'An error occurred while fetching the dashboard'}, status=500)
+        traceback.print_exc()
+        return JsonResponse({'error': 'Error fetching dashboard'}, status=500)
 
+# -----------------------
+# Delete Dashboard (DELETE)
+# -----------------------
 @csrf_exempt
 @api_view(['DELETE'])
-@authentication_classes([CsrfExemptSessionAuthentication])
+@authentication_classes([SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def delete_dashboard(request):
     try:
-        # Get dashboard_id from request body
-        data = json.loads(request.body)
+        data = request.data
         dashboard_id = data.get('dashboard_id')
-        
         if not dashboard_id:
             return JsonResponse({'error': 'dashboard_id is required'}, status=400)
-            
+       
         dashboard = Dashboard.objects.get(id=dashboard_id, user=request.user)
         dashboard.delete()
         return JsonResponse({'message': 'Dashboard deleted successfully'})
     except Dashboard.DoesNotExist:
         return JsonResponse({'error': 'Dashboard not found'}, status=404)
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON in request body'}, status=400)
     except Exception as e:
-        return JsonResponse({'error': 'An error occurred while deleting the dashboard'}, status=500)
+        traceback.print_exc()
+        return JsonResponse({'error': 'Error deleting dashboard'}, status=500)
+
+# -----------------------
+# Deploy Dashboard (POST)
+# -----------------------
 
 @csrf_exempt
 @api_view(['POST'])
-@authentication_classes([CsrfExemptSessionAuthentication])
+@authentication_classes([SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def deploy_dashboard(request):
     try:

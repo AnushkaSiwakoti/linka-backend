@@ -48,14 +48,32 @@ MIDDLEWARE = [
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Use the same origin for the frontend
-    "http://137.184.141.237"
+    "http://137.184.141.237",
+    "http://127.0.0.1:8000"
+
 ]
 
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_HEADERS = list(default_headers) + [
-    'cache-control',  # Include this to allow cache-control header
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'cache-controls'
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
 ]
-
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
 ROOT_URLCONF = 'djangoProject.urls'
 
 TEMPLATES = [
@@ -118,11 +136,13 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_NAME = 'sessionid' 
 SESSION_COOKIE_SECURE = False # was true
 SESSION_COOKIE_HTTPONLY = False 
-SESSION_COOKIE_SAMESITE = None 
+# SESSION_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
 
-# Disable CSRF
-CSRF_COOKIE_SECURE = False
-CSRF_COOKIE_HTTPONLY = False
-CSRF_COOKIE_SAMESITE = None
+# # Disable CSRF
+# CSRF_COOKIE_NAME = 'csrftoken'
+# CSRF_COOKIE_SAMESITE = 'Lax'
+# CSRF_COOKIE_SECURE = False  # Set to True in productionCSRF_COOKIE_SAMESITE = 'Lax'
+# CSRF_COOKIE_HTTPONLY = False
+# CSRF_TRUSTED_ORIGINS = ['http://localhost:3000']  # Add your frontend domain
 

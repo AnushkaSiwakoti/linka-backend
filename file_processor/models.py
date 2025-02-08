@@ -10,3 +10,14 @@ class ProcessedFileData(models.Model):
 
     def __str__(self):
         return f'{self.file_name} - {self.file_id} - {self.username}'
+
+
+# from django.db import models
+
+# class ProcessedFileData(models.Model):
+#     field1 = models.CharField(max_length=100)
+#     field2 = models.CharField(max_length=100)
+#     uploaded_at = models.DateTimeField(auto_now_add=True)
+
+#     def __str__(self):
+#         return f'{self.field1} - {self.field2}'

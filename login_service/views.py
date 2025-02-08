@@ -18,38 +18,19 @@ def create_Account(request):
     except ValueError as e:
         return JsonResponse({'error': str(e)}, status=400)
 
-@csrf_exempt  # Add csrf_exempt only if you are sure you want to disable CSRF for this endpoint
 @api_view(['POST'])
 def verify_Account(request):
-    try:
-        username = request.data.get('username')
-        password = request.data.get('password')
-        
-        # Use authenticate() to verify the user's credentials
-        user = authenticate(request, username=username, password=password)
-        
-        if user is not None:
-            # Log the user in to create an authenticated session
-            login(request, user)
-
-            # Make sure session key is generated
-            request.session.save()
-            
-            # Get the session ID and include it in the response
-            session_id = request.session.session_key
-            if not session_id:
-                return JsonResponse({'error': 'Failed to generate session ID'}, status=500)
-            
-            return JsonResponse({
-                'message': 'User verified and logged in successfully',
-                'session_id': session_id
-            }, status=201)
-        else:
-            return JsonResponse({'error': 'Invalid credentials'}, status=400)
-
-    except BaseUser.DoesNotExist:
-        return JsonResponse({'error': 'User does not exist'}, status=404)
-
+    username = request.data.get('username')
+    password = request.data.get('password')
+    user = authenticate(request, username=username, password=password)
+    
+    if user:
+        login(request, user)
+        return JsonResponse({
+            'username': user.username,
+            'sessionid': request.session.session_key
+        }, status=200)
+    return JsonResponse({'error': 'Invalid credentials'}, status=401)
 
 @csrf_exempt  # Only use if you are sure about bypassing CSRF protection for this view
 def logout_view(request):
