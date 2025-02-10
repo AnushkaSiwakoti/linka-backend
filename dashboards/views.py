@@ -1,4 +1,4 @@
-# just to recommit
+# recommit
 import os
 import traceback
 from django.core.exceptions import ValidationError
