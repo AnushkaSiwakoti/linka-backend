@@ -1,5 +1,7 @@
+import json
 import csv
 import config
+import requests
 import logging
 from django.shortcuts import render
 from django.http import JsonResponse
@@ -89,46 +91,117 @@ def upload_file(request):
         else:
             logger.error("No file provided in the request")
             return JsonResponse({'status': 'error', 'message': 'No file provided'}, status=400)
-        
 
+   
 @csrf_exempt
-def fetch_csv(request):
+def fetch_files(request):
     if request.method == 'POST':
         try:
-            # Log the request body to troubleshoot
-            logger.info(f"Request body: {request.body}")
-
-            # Parse JSON body
+            # Log raw request data
+            logger.info(f"Request body: {request.body.decode('utf-8')}")
+            
+            # Parse request body
             body = json.loads(request.body)
+            logger.info(f"Parsed body: {body}")  # Debug log
+            
             file_url = body.get('file_url')
-
-            # Check if file_url is provided
+            file_type = body.get('file_type')
+            
+            logger.info(f"File URL: {file_url}, File Type: {file_type}")  # Debug log
+            
             if not file_url:
-                raise ValueError('No file_url provided')
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'No file_url provided'
+                }, status=400)
+                
+            if not file_type:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'No file_type provided'
+                }, status=400)
 
-            # Fetch the file from the provided URL
+            # Fetch the file content
             response = requests.get(file_url)
+            logger.info(f"File fetch status: {response.status_code}")  # Debug log
+            
             if response.status_code == 200:
-                # Attempt to parse the CSV content
-                try:
-                    csv_content = []
-                    decoded_content = response.content.decode('utf-8')
-                    csv_reader = csv.reader(decoded_content.splitlines())
-                    for row in csv_reader:
-                        csv_content.append(row)
-                    return JsonResponse({'status': 'success', 'csv_content': csv_content}, status=200)
-                except Exception as csv_error:
-                    logger.error(f"Error parsing CSV: {csv_error}")
-                    return JsonResponse({'status': 'error', 'message': 'Failed to parse CSV content'}, status=400)
+                content = response.text
+                
+                # Process based on file type
+                if file_type == 'csv':
+                    try:
+                        csv_data = []
+                        lines = content.strip().split('\n')
+                        if not lines:
+                            return JsonResponse({
+                                'status': 'error',
+                                'message': 'Empty CSV file'
+                            }, status=400)
+                            
+                        reader = csv.reader(lines)
+                        for row in reader:
+                            csv_data.append(row)
+                        
+                        return JsonResponse({
+                            'status': 'success',
+                            'csv_content': csv_data
+                        })
+                        
+                    except Exception as e:
+                        logger.error(f"CSV processing error: {str(e)}")
+                        return JsonResponse({
+                            'status': 'error',
+                            'message': f'Invalid CSV format: {str(e)}'
+                        }, status=400)
+                        
+                elif file_type == 'json':
+                    try:
+                        json_data = json.loads(content)
+                        return JsonResponse({
+                            'status': 'success',
+                            'json_content': json_data
+                        })
+                    except json.JSONDecodeError as e:
+                        logger.error(f"JSON processing error: {str(e)}")
+                        return JsonResponse({
+                            'status': 'error',
+                            'message': f'Invalid JSON format: {str(e)}'
+                        }, status=400)
+                        
+                elif file_type == 'txt':
+                    return JsonResponse({
+                        'status': 'success',
+                        'text_content': content
+                    })
+                    
+                else:
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': f'Unsupported file type: {file_type}'
+                    }, status=400)
+                    
             else:
-                return JsonResponse({'status': 'error', 'message': f'Failed to fetch CSV, HTTP status: {response.status_code}'}, status=400)
-        except json.JSONDecodeError:
-            return JsonResponse({'status': 'error', 'message': 'Invalid JSON payload'}, status=400)
-        except requests.exceptions.RequestException as req_error:
-            logger.error(f"Error fetching the file: {req_error}")
-            return JsonResponse({'status': 'error', 'message': 'Error fetching the file'}, status=500)
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f'Failed to fetch file: {response.status_code}'
+                }, status=400)
+                
+        except json.JSONDecodeError as e:
+            logger.error(f"Request JSON decode error: {str(e)}")
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Invalid JSON in request: {str(e)}'
+            }, status=400)
+            
         except Exception as e:
-            logger.error(f"Unexpected error: {e}")
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-    else:
-        return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+            logger.error(f"Unexpected error: {str(e)}")
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            }, status=500)
+            
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Method not allowed'
+    }, status=405)
