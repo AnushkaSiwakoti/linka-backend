@@ -1,5 +1,7 @@
+import json
 import csv
 import config
+import requests
 import logging
 from django.shortcuts import render
 from django.http import JsonResponse
@@ -12,10 +14,8 @@ from .models import ProcessedFileData
 
 logger = logging.getLogger(__name__)
 
-
 # Load Google Service Account credentials
 SERVICE_ACCOUNT_FILE = config.GOOGLE_CREDENTIALS_PATH # Change to your credentials file path
-
 
 credentials = service_account.Credentials.from_service_account_file(
     SERVICE_ACCOUNT_FILE,
@@ -37,98 +37,155 @@ def upload_file(request):
                 file_name = uploaded_file.name
                 logger.info(f"Received file: {file_name}")
 
-                # Save the file temporarily in the server's filesystem
+                # Save the file temporarily
                 file_path = default_storage.save(file_name, uploaded_file)
                 logger.info(f"File saved at: {file_path}")
 
-                # Retry logic for uploading to Google Drive
-                for attempt in range(MAX_RETRIES):
-                    try:
-                        # Upload the file to Google Drive
-                        file_metadata = {'name': file_name}
-                        media = MediaFileUpload(file_path, mimetype='text/csv')  # Adjust the mimetype if needed
-                        uploaded_drive_file = drive_service.files().create(
-                            body=file_metadata,
-                            media_body=media,
-                            fields='id, webViewLink'
-                        ).execute()
+                try:
+                    # Upload to Google Drive with retry logic
+                    for attempt in range(MAX_RETRIES):
+                        try:
+                            file_metadata = {'name': file_name}
+                            media = MediaFileUpload(file_path, resumable=True)
+                            
+                            drive_file = drive_service.files().create(
+                                body=file_metadata,
+                                media_body=media,
+                                fields='id, webViewLink'
+                            ).execute()
 
-                        # If successful, break out of the retry loop
-                        break
-                    except Exception as retry_exception:
-                        logger.warning(f"Attempt {attempt + 1} failed with error: {retry_exception}")
-                        if attempt < MAX_RETRIES - 1:
+                            # Break loop if successful
+                            break
+                        except Exception as e:
+                            if attempt == MAX_RETRIES - 1:  # Last attempt
+                                raise e
                             time.sleep(2 ** attempt)  # Exponential backoff
-                        else:
-                            raise retry_exception
 
-                # Google Drive File ID and URL
-                file_id = uploaded_drive_file.get('id')
-                file_url = uploaded_drive_file.get('webViewLink')
-                logger.info(f"File uploaded to Google Drive: {file_url}")
+                    file_id = drive_file.get('id')
+                    file_url = drive_file.get('webViewLink')
+                    logger.info(f"File uploaded to Google Drive: {file_url}")
 
-                # Save metadata in MySQL
-                file_data = ProcessedFileData(
-                    file_id=file_id,
-                    file_name=file_name,
-                    file_url=file_url,
-                    processed=False  # Set this to True once the file is processed
-                )
-                file_data.save()
+                    # Save metadata to database
+                    file_data = ProcessedFileData.objects.create(
+                        file_id=file_id,
+                        file_name=file_name,
+                        file_url=file_url,
+                        processed=True
+                    )
+                    logger.info(f"File metadata saved to database with ID: {file_data.id}")
 
-                # Clean up: remove the file from the server after uploading
-                default_storage.delete(file_path)
-                logger.info(f"Local file deleted: {file_path}")
+                    # Clean up temporary file
+                    default_storage.delete(file_path)
+                    logger.info(f"Temporary file deleted: {file_path}")
 
-                # Send a success response back to the frontend
-                return JsonResponse({'status': 'success', 'message': 'File uploaded and processed successfully', 'file_id': file_id, 'file_url': file_url}, status=200)
+                    return JsonResponse({
+                        'status': 'success',
+                        'message': 'File uploaded successfully',
+                        'file_id': file_id,
+                        'file_url': file_url
+                    })
+
+                except Exception as e:
+                    logger.error(f"Upload error: {str(e)}")
+                    default_storage.delete(file_path)
+                    raise e
 
             except Exception as e:
                 logger.error(f"Error during file processing: {str(e)}")
-                return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-        else:
-            logger.error("No file provided in the request")
-            return JsonResponse({'status': 'error', 'message': 'No file provided'}, status=400)
-        
+                return JsonResponse({
+                    'status': 'error',
+                    'message': str(e)
+                }, status=500)
+
+        return JsonResponse({
+            'status': 'error',
+            'message': 'No file provided'
+        }, status=400)
+
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Method not allowed'
+    }, status=405)
 
 @csrf_exempt
-def fetch_csv(request):
+def fetch_files(request):
     if request.method == 'POST':
         try:
-            # Log the request body to troubleshoot
-            logger.info(f"Request body: {request.body}")
-
-            # Parse JSON body
+            logger.info(f"Fetch request body: {request.body.decode('utf-8')}")
             body = json.loads(request.body)
             file_url = body.get('file_url')
+            file_type = body.get('file_type')
+            
+            if not file_url or not file_type:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Missing required parameters'
+                }, status=400)
 
-            # Check if file_url is provided
-            if not file_url:
-                raise ValueError('No file_url provided')
+            # Get file from database
+            try:
+                file_data = ProcessedFileData.objects.get(file_url=file_url)
+                logger.info(f"Found file in database: {file_data.file_id}")
+            except ProcessedFileData.DoesNotExist:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'File not found in database'
+                }, status=404)
 
-            # Fetch the file from the provided URL
-            response = requests.get(file_url)
-            if response.status_code == 200:
-                # Attempt to parse the CSV content
+            # Get file content from Google Drive with retry logic
+            for attempt in range(MAX_RETRIES):
                 try:
-                    csv_content = []
-                    decoded_content = response.content.decode('utf-8')
-                    csv_reader = csv.reader(decoded_content.splitlines())
-                    for row in csv_reader:
-                        csv_content.append(row)
-                    return JsonResponse({'status': 'success', 'csv_content': csv_content}, status=200)
-                except Exception as csv_error:
-                    logger.error(f"Error parsing CSV: {csv_error}")
-                    return JsonResponse({'status': 'error', 'message': 'Failed to parse CSV content'}, status=400)
+                    request = drive_service.files().get_media(fileId=file_data.file_id)
+                    file_content = request.execute()
+                    content = file_content.decode('utf-8')
+                    logger.info("Successfully retrieved file content from Drive")
+                    break
+                except Exception as e:
+                    if attempt == MAX_RETRIES - 1:  # Last attempt
+                        raise e
+                    time.sleep(2 ** attempt)  # Exponential backoff
+                    logger.warning(f"Retry {attempt + 1} for file fetch")
+
+            # Process based on file type
+            if file_type == 'csv':
+                csv_data = []
+                lines = content.strip().split('\n')
+                reader = csv.reader(lines)
+                for row in reader:
+                    csv_data.append(row)
+                
+                return JsonResponse({
+                    'status': 'success',
+                    'csv_content': csv_data
+                })
+                
+            elif file_type == 'json':
+                json_data = json.loads(content)
+                return JsonResponse({
+                    'status': 'success',
+                    'json_content': json_data
+                })
+                
+            elif file_type == 'xml':
+                return JsonResponse({
+                    'status': 'success',
+                    'xml_content': content
+                })
+                
             else:
-                return JsonResponse({'status': 'error', 'message': f'Failed to fetch CSV, HTTP status: {response.status_code}'}, status=400)
-        except json.JSONDecodeError:
-            return JsonResponse({'status': 'error', 'message': 'Invalid JSON payload'}, status=400)
-        except requests.exceptions.RequestException as req_error:
-            logger.error(f"Error fetching the file: {req_error}")
-            return JsonResponse({'status': 'error', 'message': 'Error fetching the file'}, status=500)
+                return JsonResponse({
+                    'status': 'success',
+                    'text_content': content
+                })
+
         except Exception as e:
-            logger.error(f"Unexpected error: {e}")
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-    else:
-        return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+            logger.error(f"Error processing file: {str(e)}")
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Failed to process file: {str(e)}'
+            }, status=500)
+
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Method not allowed'
+    }, status=405)
