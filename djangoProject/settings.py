@@ -113,16 +113,14 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_URL = '/verify-account/' 
-# Session configuration 
 SESSION_ENGINE = 'django.contrib.sessions.backends.db' 
 SESSION_COOKIE_NAME = 'sessionid' 
-SESSION_COOKIE_SECURE = True # True for local, False for development
+SESSION_COOKIE_SECURE = False # True for local, False for development
 SESSION_COOKIE_HTTPONLY = False 
 SESSION_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
 
-# Disable CSRF
-CSRF_COOKIE_SECURE = True # True for local, False for development
+
+CSRF_COOKIE_SECURE =False # True for local, False for development
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = 'None'
-
