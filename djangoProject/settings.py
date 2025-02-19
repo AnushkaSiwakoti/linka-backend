@@ -1,4 +1,4 @@
-# recommit
+# just to recommit
 from pathlib import Path
 import pymysql
 from decouple import config, Csv
@@ -122,6 +122,6 @@ SESSION_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
 
 # Disable CSRF
-CSRF_COOKIE_SECURE = False # True for local, False for development
+CSRF_COOKIE_SECURE =False # True for local, False for development
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = 'None'
