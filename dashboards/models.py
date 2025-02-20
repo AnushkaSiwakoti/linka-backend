@@ -1,4 +1,4 @@
-# recommit
+# just to recommit
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -30,4 +30,3 @@ class Dashboard(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.user.username}"
-
