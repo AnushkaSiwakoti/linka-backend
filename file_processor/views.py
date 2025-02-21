@@ -1,33 +1,28 @@
+import os
+import time
+import logging
 import json
 import csv
-import config
-import requests
-import logging
-from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.core.files.storage import default_storage
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from .models import ProcessedFileData
+import config  # assuming this contains your GOOGLE_CREDENTIALS_PATH
 
 logger = logging.getLogger(__name__)
 
-
 # Load Google Service Account credentials
-SERVICE_ACCOUNT_FILE = config.GOOGLE_CREDENTIALS_PATH # Change to your credentials file path
-
-
+SERVICE_ACCOUNT_FILE = config.GOOGLE_CREDENTIALS_PATH  # Adjust to your credentials file path
 credentials = service_account.Credentials.from_service_account_file(
     SERVICE_ACCOUNT_FILE,
     scopes=['https://www.googleapis.com/auth/drive.file']
 )
 drive_service = build('drive', 'v3', credentials=credentials)
 
-import time
-
 MAX_RETRIES = 3
+
 @csrf_exempt
 def upload_file(request):
     if request.method == 'POST':
@@ -38,7 +33,6 @@ def upload_file(request):
                 if not username:
                     return JsonResponse({'status': 'error', 'message': 'Username is required'}, status=400)
 
-                # Log username for debugging
                 logger.info(f"Username provided: {username}")
 
                 # Get the uploaded file
@@ -46,23 +40,29 @@ def upload_file(request):
                 file_name = uploaded_file.name
                 logger.info(f"Received file: {file_name}")
 
-                # Save the file temporarily in the server's filesystem
-                file_path = default_storage.save(file_name, uploaded_file)
+                # Save the file to /tmp directory manually
+                file_path = os.path.join('/tmp', file_name)
+                with open(file_path, 'wb+') as destination:
+                    for chunk in uploaded_file.chunks():
+                        destination.write(chunk)
                 logger.info(f"File saved at: {file_path}")
+
+                # (Optional) Open the file for processing if needed
+                # with open(file_path, 'r', encoding='utf-8') as file:
+                #     logger.info("Attempting to read the CSV file")
+                #     content = file.read()  # if processing is needed
 
                 # Retry logic for uploading to Google Drive
                 for attempt in range(MAX_RETRIES):
                     try:
-                        # Upload the file to Google Drive
                         file_metadata = {'name': file_name}
-                        media = MediaFileUpload(file_path, mimetype='text/csv')  # Adjust the mimetype if needed
+                        media = MediaFileUpload(file_path, mimetype='text/csv')
                         uploaded_drive_file = drive_service.files().create(
                             body=file_metadata,
                             media_body=media,
                             fields='id, webViewLink'
                         ).execute()
-
-                        # If successful, break out of the retry loop
+                        # Successful upload; break out of the retry loop
                         break
                     except Exception as retry_exception:
                         logger.warning(f"Attempt {attempt + 1} failed with error: {retry_exception}")
@@ -81,17 +81,22 @@ def upload_file(request):
                     file_id=file_id,
                     file_name=file_name,
                     file_url=file_url,
-                    processed=False,  # Set this to True once the file is processed
-                    username=username  # Add username to the database record
+                    processed=False,
+                    username=username
                 )
                 file_data.save()
 
-                # Clean up: remove the file from the server after uploading
-                default_storage.delete(file_path)
+                # Clean up: remove the file from the local filesystem after uploading
+                os.remove(file_path)
                 logger.info(f"Local file deleted: {file_path}")
 
                 # Send a success response back to the frontend
-                return JsonResponse({'status': 'success', 'message': 'File uploaded and processed successfully', 'file_id': file_id, 'file_url': file_url}, status=200)
+                return JsonResponse({
+                    'status': 'success',
+                    'message': 'File uploaded and processed successfully',
+                    'file_id': file_id,
+                    'file_url': file_url
+                }, status=200)
 
             except Exception as e:
                 logger.error(f"Error during file processing: {str(e)}")
