@@ -16,6 +16,8 @@ DEBUG = True  # Keep this True during development, set to False in production
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '137.184.141.237']
 
+MEDIA_ROOT = '/tmp/'
+
 FILE_UPLOAD_TEMP_DIR = '/tmp/'
 
 # Application definition
