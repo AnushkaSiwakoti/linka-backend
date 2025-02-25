@@ -26,7 +26,7 @@ def verify_user(request):
             'redirect_url': '/verify-account/'
         }, status=401)
 
-# @csrf_exempt
+@csrf_exempt
 @api_view(['POST'])
 @authentication_classes([CsrfExemptSessionAuthentication])
 @permission_classes([IsAuthenticated])
