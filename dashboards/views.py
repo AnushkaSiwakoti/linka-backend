@@ -1,6 +1,5 @@
 # just to recommit
 import os
-import traceback
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -26,7 +25,7 @@ def verify_user(request):
             'redirect_url': '/verify-account/'
         }, status=401)
 
-@csrf_exempt
+# @csrf_exempt
 @api_view(['POST'])
 @authentication_classes([CsrfExemptSessionAuthentication])
 @permission_classes([IsAuthenticated])
@@ -219,13 +218,14 @@ def deploy_dashboard(request):
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>{name}</title>
-          <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
             <style>
                 * {{
                     margin: 0;
                     padding: 0;
                     box-sizing: border-box;
                 }}
+
                 body {{
                     background-color: #000;
                     color: #fff;
@@ -234,11 +234,13 @@ def deploy_dashboard(request):
                     line-height: 1.5;
                     overflow-x: hidden;
                 }}
+
                 .deploy-container {{
                     min-height: 100vh;
                     padding: 20px;
                     position: relative;
                 }}
+
                 .background-image {{
                     position: fixed;
                     top: 0;
@@ -250,6 +252,7 @@ def deploy_dashboard(request):
                     filter: brightness(0.9);
                     z-index: -2;
                 }}
+
                 .deploy-container::before {{
                     content: '';
                     position: fixed;
@@ -260,6 +263,7 @@ def deploy_dashboard(request):
                     background: rgba(0, 0, 0, 0.6);
                     z-index: -1;
                 }}
+
                 .components-container {{
                     width: {max_width}px;
                     min-height: {max_height}px;
@@ -267,6 +271,7 @@ def deploy_dashboard(request):
                     padding: 20px;
                     position: relative;
                 }}
+
                 .component-wrapper {{
                     position: absolute;
                     background: rgba(17, 24, 39, 0.95);
@@ -275,17 +280,20 @@ def deploy_dashboard(request):
                     border: 1px solid rgba(255, 255, 255, 0.1);
                     overflow: hidden;
                 }}
+
                 .component-header {{
                     padding: 16px;
                     background: rgba(0, 0, 0, 0.2);
                     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
                 }}
+
                 .component-header h3 {{
                     margin: 0;
                     font-size: 1rem;
                     font-weight: 500;
                     color: rgba(255, 255, 255, 0.9);
                 }}
+
                 .chart-wrapper {{
                     height: calc(100% - 53px);
                     padding: 16px;
@@ -293,30 +301,36 @@ def deploy_dashboard(request):
                     align-items: center;
                     justify-content: center;
                 }}
+
                 .chart-wrapper canvas {{
                     width: 100% !important;
                     height: 100% !important;
                 }}
+
                 .table-wrapper {{
                     height: calc(100% - 53px);
                     display: flex;
                     flex-direction: column;
                 }}
+
                 .table-content {{
                     flex: 1;
                     overflow: auto;
                     padding: 16px;
                 }}
+
                 .data-table {{
                     width: 100%;
                     border-collapse: collapse;
                 }}
+
                 .data-table th,
                 .data-table td {{
                     padding: 12px;
                     text-align: left;
                     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
                 }}
+
                 .data-table th {{
                     background: rgba(0, 0, 0, 0.2);
                     position: sticky;
@@ -324,6 +338,7 @@ def deploy_dashboard(request):
                     z-index: 1;
                     font-weight: 500;
                 }}
+
                 .pagination {{
                     padding: 16px;
                     display: flex;
@@ -332,6 +347,7 @@ def deploy_dashboard(request):
                     align-items: center;
                     background: rgba(0, 0, 0, 0.2);
                 }}
+
                 .pagination button {{
                     padding: 8px 16px;
                     background: rgba(255, 255, 255, 0.1);
@@ -340,10 +356,12 @@ def deploy_dashboard(request):
                     color: white;
                     cursor: pointer;
                 }}
+
                 .pagination button:disabled {{
                     opacity: 0.5;
                     cursor: not-allowed;
                 }}
+
                 @media (max-width: {max_width + 40}px) {{
                     .deploy-container {{
                         overflow-x: auto;
@@ -363,6 +381,7 @@ def deploy_dashboard(request):
             <script>
                 const dashboardState = {json.dumps(state)};
                 const ROWS_PER_PAGE = 10;
+
                 function createChart(chartData, type) {{
                     const ctx = document.createElement('canvas');
                     ctx.style.maxHeight = '100%';
@@ -406,13 +425,17 @@ def deploy_dashboard(request):
                     }});
                     return ctx;
                 }}
+
                 function createTable(data, columns) {{
                     const wrapper = document.createElement('div');
                     wrapper.className = 'table-wrapper';
+
                     const content = document.createElement('div');
                     content.className = 'table-content';
+
                     const table = document.createElement('table');
                     table.className = 'data-table';
+
                     const thead = document.createElement('thead');
                     const headerRow = document.createElement('tr');
                     columns.forEach(column => {{
@@ -422,6 +445,7 @@ def deploy_dashboard(request):
                     }});
                     thead.appendChild(headerRow);
                     table.appendChild(thead);
+
                     const tbody = document.createElement('tbody');
                     data.slice(0, ROWS_PER_PAGE).forEach(row => {{
                         const tr = document.createElement('tr');
@@ -433,8 +457,10 @@ def deploy_dashboard(request):
                         tbody.appendChild(tr);
                     }});
                     table.appendChild(tbody);
+
                     content.appendChild(table);
                     wrapper.appendChild(content);
+
                     const pagination = document.createElement('div');
                     pagination.className = 'pagination';
                     pagination.innerHTML = `
@@ -443,13 +469,17 @@ def deploy_dashboard(request):
                         <button>Next</button>
                     `;
                     wrapper.appendChild(pagination);
+
                     return wrapper;
                 }}
+
                 function renderComponent(componentId) {{
                     const chart = dashboardState.charts?.find(c => c.id === componentId);
                     const isTable = componentId === 'table';
                     const position = dashboardState.componentPositions[componentId];
+
                     if (!position) return null;
+
                     const wrapper = document.createElement('div');
                     wrapper.className = 'component-wrapper';
                     
@@ -457,10 +487,12 @@ def deploy_dashboard(request):
                     wrapper.style.width = `${{position.width}}px`;
                     wrapper.style.height = `${{position.height}}px`;
                     wrapper.style.transform = `translate(${{position.x}}px, ${{position.y}}px)`;
+
                     const header = document.createElement('div');
                     header.className = 'component-header';
                     header.innerHTML = `<h3>${{isTable ? 'Data Table' : `${{chart?.type === 'pie' ? 'Category' : chart?.chartType}} Distribution`}}</h3>`;
                     wrapper.appendChild(header);
+
                     if (isTable) {{
                         wrapper.appendChild(createTable(dashboardState.data, dashboardState.columns));
                     }} else if (chart) {{
@@ -469,8 +501,10 @@ def deploy_dashboard(request):
                         chartWrapper.appendChild(createChart(chart, chart.type));
                         wrapper.appendChild(chartWrapper);
                     }}
+
                     return wrapper;
                 }}
+
                 document.addEventListener('DOMContentLoaded', () => {{
                     const container = document.getElementById('componentsContainer');
                     
@@ -487,32 +521,17 @@ def deploy_dashboard(request):
         </html>
         """
 
-        # local: deployment_directory = os.path.join(os.getcwd(), 'deployments')
-        
-        # if not os.path.exists(deployment_directory):
-        #     os.makedirs(deployment_directory)
-        #     print(f"Deployment directory: {deployment_directory}")  # Debug statement
+        deployment_directory = os.path.join(os.getcwd(), 'deployments')
+        if not os.path.exists(deployment_directory):
+            os.makedirs(deployment_directory)
 
-        
-        deployment_directory = '/app/deployments'
-        
         file_name = f"dashboard_{request.user.id}_{dashboard_id}.html"
         file_path = os.path.join(deployment_directory, file_name)
-        print(f"File path for deployment: {file_path}")  # Debug statement
-        
-        try:
-            with open(file_path, 'w') as file:
-                file.write(html_content)
-                file.flush()  # Ensure content is flushed to disk
-                os.fsync(file.fileno())  # Force the write to persist
-            print(f"[DEBUG] Successfully created HTML file at: {file_path}")
-        except Exception as file_creation_error:
-            print(f"[ERROR] Failed to create HTML file at {file_path}: {file_creation_error}")
-            traceback.print_exc()
-            
-        deployed_url = f"{request.build_absolute_uri('/')[:-1]}/deployments/{file_name}"
-       
 
+        with open(file_path, 'w') as file:
+            file.write(html_content)
+
+        deployed_url = f"{request.build_absolute_uri('/')[:-1]}/deployments/{file_name}"
         
         dashboard.deployed_url = deployed_url
         dashboard.save()
@@ -524,5 +543,4 @@ def deploy_dashboard(request):
 
     except Exception as e:
         print(f"Error deploying dashboard: {str(e)}")
-        traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=500)
