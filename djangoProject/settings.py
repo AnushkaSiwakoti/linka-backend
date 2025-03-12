@@ -14,7 +14,7 @@ SECRET_KEY = 'Linka2024!'
 
 DEBUG = True  # Keep this True during development, set to False in production
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '137.184.141.237']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '137.184.141.237', 'linka_backend_1']
 
 MEDIA_ROOT = '/tmp/'
 
@@ -33,6 +33,8 @@ INSTALLED_APPS = [
     'file_processor',
     'rest_framework',
     'dashboards',
+    'django_extensions',
+    'sslserver',
 ]
 
 MIDDLEWARE = [
@@ -45,18 +47,28 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'djangoProject.middleware.custom_middleware.SecurePartitionedCookieMiddleware',
-    
+
 ]
 
-
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Use the same origin for the frontend
-    "http://137.184.141.237"
+    "http://localhost:3000",
+    "https://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://127.0.0.1:3000",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_HEADERS = list(default_headers) + [
-    'cache-control',  # Include this to allow cache-control header
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'cache-control',
 ]
 
 ROOT_URLCONF = 'djangoProject.urls'
@@ -125,6 +137,6 @@ SESSION_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
 
 # Disable CSRF
-CSRF_COOKIE_SECURE = False # True for local, False for development
+CSRF_COOKIE_SECURE = False# True for local, False for development
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = 'None'
