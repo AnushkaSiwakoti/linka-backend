@@ -90,19 +90,34 @@ def list_dashboards(request):
 def get_dashboard(request, dashboard_id):
     try:
         dashboard = Dashboard.objects.get(id=dashboard_id, user=request.user)
+
+        # Extract file URL from fileId if it looks like a URL
+        file_url = None
+        try:
+            if "http" in dashboard.state:  # Check if a URL is in the state
+                state_data = json.loads(dashboard.state)
+                file_url = state_data.get("fileId", None)  # Get the URL from fileId
+        except Exception as e:
+            print(f"Error extracting fileId: {e}")
+
         return JsonResponse({
             'id': dashboard.id,
             'name': dashboard.name,
             'state': json.loads(dashboard.state),
             'created_at': dashboard.created_at,
-            'updated_at': dashboard.updated_at
+            'updated_at': dashboard.updated_at,
+            'deployed_url': dashboard.deployed_url,  # Existing deployed URL
+            'file_url': file_url  # Correctly extracting the file URL
         })
+
     except Dashboard.DoesNotExist:
         return JsonResponse({'error': 'Dashboard not found'}, status=404)
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid dashboard state'}, status=500)
     except Exception as e:
-        return JsonResponse({'error': 'An error occurred while fetching the dashboard'}, status=500)
+        print(f"Error in get_dashboard: {str(e)}")
+        return JsonResponse({'error': f'An error occurred: {str(e)}'}, status=500)
+
 
 @csrf_exempt
 @api_view(['DELETE'])
