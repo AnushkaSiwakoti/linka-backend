@@ -15,7 +15,7 @@ SECRET_KEY = 'Linka2024!'
 DEBUG = True  # Keep this True during development, set to False in production
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '137.184.141.237', 'backend',
-    'backend:8000']
+    'backend:8000', 'linka_backend_1']
 
 MEDIA_ROOT = '/tmp/'
 
@@ -138,6 +138,6 @@ SESSION_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
 
 # Disable CSRF
-CSRF_COOKIE_SECURE = False# True for local, False for development
-CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SECURE = True# True for local, False for development
+CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = 'None'
