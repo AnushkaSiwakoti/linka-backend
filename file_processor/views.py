@@ -10,6 +10,7 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from .models import ProcessedFileData
 import config  # assuming this contains your GOOGLE_CREDENTIALS_PATH
+from googleapiclient.errors import HttpError
 
 logger = logging.getLogger(__name__)
 

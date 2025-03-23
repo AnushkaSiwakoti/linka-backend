@@ -14,7 +14,8 @@ SECRET_KEY = 'Linka2024!'
 
 DEBUG = True  # Keep this True during development, set to False in production
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '137.184.141.237', 'linka_backend_1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '137.184.141.237', 'backend',
+    'backend:8000', 'linka_backend_1']
 
 MEDIA_ROOT = '/tmp/'
 
@@ -47,28 +48,22 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'djangoProject.middleware.custom_middleware.SecurePartitionedCookieMiddleware',
-
+    
 ]
+
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "https://localhost:3000",
     "http://127.0.0.1:3000",
     "https://127.0.0.1:3000",
+    "https://137.184.141.237",
+    "http://137.184.141.237"
 ]
 
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
-    'cache-control',
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'cache-control',  # Include this to allow cache-control header
 ]
 
 ROOT_URLCONF = 'djangoProject.urls'
@@ -131,12 +126,12 @@ LOGIN_URL = '/verify-account/'
 # Session configuration 
 SESSION_ENGINE = 'django.contrib.sessions.backends.db' 
 SESSION_COOKIE_NAME = 'sessionid' 
-SESSION_COOKIE_SECURE = False # True for local, False for development
-SESSION_COOKIE_HTTPONLY = False 
+SESSION_COOKIE_SECURE = True # True for local, False for development
+SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
 
 # Disable CSRF
-CSRF_COOKIE_SECURE = False# True for local, False for development
-CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SECURE = True # True for local, False for development
+CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = 'None'
