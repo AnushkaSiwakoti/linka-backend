@@ -67,6 +67,11 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     'cache-control',  # Include this to allow cache-control header
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://137.184.141.237",
+    "http://137.184.141.237",
+]
+
 ROOT_URLCONF = 'djangoProject.urls'
 
 TEMPLATES = [
