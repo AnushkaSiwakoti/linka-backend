@@ -56,8 +56,8 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "https://localhost:3000",
-    "http://127.0.0.1:3000",
-    "https://127.0.0.1:3000",
+    "http://127.0.0.1:8000",
+    "https://127.0.0.1:8000",
     "https://137.184.141.237",
     "http://137.184.141.237"
 ]
@@ -65,6 +65,13 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = list(default_headers) + [
     'cache-control',  # Include this to allow cache-control header
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://137.184.141.237",
+    "http://137.184.141.237",
+    "http://127.0.0.1:8000",
+    "https://127.0.0.1:8000"
 ]
 
 ROOT_URLCONF = 'djangoProject.urls'
@@ -127,14 +134,12 @@ LOGIN_URL = '/verify-account/'
 # Session configuration 
 SESSION_ENGINE = 'django.contrib.sessions.backends.db' 
 SESSION_COOKIE_NAME = 'sessionid' 
-SESSION_COOKIE_SECURE = True # True for local, False for development
+SESSION_COOKIE_SECURE = False # True for local, False for development
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
 
 # Disable CSRF
-CSRF_COOKIE_SECURE = True# True for local, False for development
-CSRF_COOKIE_HTTPONLY = True
-CSRF_COOKIE_SECURE = True # True for local, False for development
+CSRF_COOKIE_SECURE = False# True for local, False for development
 CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = 'None'
