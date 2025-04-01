@@ -7,4 +7,5 @@ urlpatterns = [
     path('<int:dashboard_id>/', views.get_dashboard, name='get_dashboard'),
     path('delete/', views.delete_dashboard, name='delete_dashboard'),
     path('deploy/', views.deploy_dashboard, name='deploy_dashboard'),
+    path('download_zip/', views.download_zip, name='download_zip'),
 ]
